@@ -1764,6 +1764,37 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
 const SUPABASE_URL = 'https://shuqiiwlsafmxasnzxok.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Eb8dblVLZa7x9K8qyzKnfQ_UOxmjMei';
 
+/* ── POLYFILL: window.storage → localStorage cuando no estamos en Claude.ai ── */
+if (!window.storage) {
+  window.storage = {
+    get: async (key) => {
+      try {
+        const val = localStorage.getItem(key);
+        if (val === null) return null;
+        return { key, value: val };
+      } catch(_) { return null; }
+    },
+    set: async (key, value) => {
+      try {
+        localStorage.setItem(key, value);
+        return { key, value };
+      } catch(_) { return null; }
+    },
+    delete: async (key) => {
+      try {
+        localStorage.removeItem(key);
+        return { key, deleted: true };
+      } catch(_) { return null; }
+    },
+    list: async (prefix) => {
+      try {
+        const keys = Object.keys(localStorage).filter(k => !prefix || k.startsWith(prefix));
+        return { keys };
+      } catch(_) { return { keys: [] }; }
+    }
+  };
+}
+
 let _sb = null;
 try {
   _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
