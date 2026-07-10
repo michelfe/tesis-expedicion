@@ -2793,19 +2793,23 @@ $('onboard-return-confirm').addEventListener('click',async()=>{
   $('onboard-return-confirm').textContent='Buscando…';
   $('onboard-return-confirm').disabled=true;
   try{
-    /* Buscar en avances primero */
+    /* Intentar directo con Supabase sin pasar por storageAdapter */
     let name=null, track='cuantitativa';
-    const r=await storageAdapter.get('avance:'+code,true);
-    if(r&&r.value){
-      const snap=JSON.parse(r.value);
-      name=snap.name;
-      track=snap.track||'cuantitativa';
-    } else {
-      /* Buscar en roster como fallback */
-      const rr=await storageAdapter.get('roster',true);
-      if(rr&&rr.value){
-        const roster=JSON.parse(rr.value);
-        if(roster[code]) name=roster[code].name;
+    if(_sb){
+      /* Buscar en avances */
+      const {data:av, error:avErr}=await _sb.from('avances').select('snap,track,name').eq('code',code).single();
+      if(avErr){
+        $('onboard-return-err').textContent='Error técnico: '+avErr.message;
+        $('onboard-return-err').style.display='block';
+        return;
+      }
+      if(av){
+        name=av.name;
+        track=av.track||'cuantitativa';
+      } else {
+        /* Buscar en roster */
+        const {data:ro, error:roErr}=await _sb.from('roster').select('name').eq('code',code).single();
+        if(ro) name=ro.name;
       }
     }
     if(name){
@@ -2817,9 +2821,11 @@ $('onboard-return-confirm').addEventListener('click',async()=>{
       pushProgressSnapshot();
       renderAnuncios();
     } else {
+      $('onboard-return-err').textContent='Código no encontrado. Verifica que está bien escrito.';
       $('onboard-return-err').style.display='block';
     }
   }catch(e){
+    $('onboard-return-err').textContent='Error: '+e.message;
     $('onboard-return-err').style.display='block';
   }finally{
     $('onboard-return-confirm').textContent='Recuperar sesión';
