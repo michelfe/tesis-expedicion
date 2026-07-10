@@ -72,16 +72,17 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
   position:absolute;right:clamp(10px,6vw,64px);top:clamp(24px,4vw,40px);
   display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2;
 }
-/* anuncios: flotante independiente debajo de hero-tools */
+/* anuncios: overlay fijo en esquina superior derecha del viewport */
 #anuncios-banner{
-  position:absolute;
-  right:clamp(10px,6vw,64px);
-  top:clamp(130px,18vw,180px); /* justo debajo de hero-tools */
-  width:160px;
-  display:flex;flex-direction:column;gap:4px;
-  max-height:160px;overflow-y:auto;
-  z-index:2;
+  position:fixed;
+  right:16px;
+  top:16px;
+  width:200px;
+  display:flex;flex-direction:column;gap:6px;
+  z-index:300;
+  pointer-events:none;
 }
+#anuncios-banner .anuncio-card{pointer-events:all;}
 #anuncios-banner::-webkit-scrollbar{width:2px;}
 #anuncios-banner::-webkit-scrollbar-thumb{background:rgba(232,196,106,.2);border-radius:2px;}
 .anuncio-card{
@@ -1279,8 +1280,6 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
           <span id="btn-validador-label">Variables</span>
         </button>
       </div>
-      <!-- Anuncios: flotante independiente, debajo de hero-tools -->
-      <div id="anuncios-banner" aria-live="polite"></div>
       <div class="eyebrow">guía metodológica</div>
       <h1>La <em>expedición</em> de<br>hacer tu tesis</h1>
       <p class="hero-sub" aria-label="Instrucciones: haz clic en el ícono de libro para ver la teoría; haz clic en el nodo circular para registrar tu avance"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> teoría · ◎ avance · clic en texto para editar</p>
@@ -1309,6 +1308,8 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
     <div class="tl-outer" id="tl-outer">
       <div class="tl-track" id="tl-track"></div>
     </div>
+    <!-- Anuncios: overlay fijo esquina superior derecha -->
+    <div id="anuncios-banner" aria-live="polite"></div>
     <div class="hint-bar" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> teoría &nbsp;·&nbsp; ◎ avance &nbsp;·&nbsp; click en texto = editar &nbsp;·&nbsp; arrastra para desplazar &nbsp;·&nbsp; <button class="teacher-trigger" id="teacher-trigger" title="Panel del profesor"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/><line x1="12" y1="2" x2="12" y2="6"/></svg></button></div>
   </div>
 
