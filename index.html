@@ -4181,10 +4181,10 @@ document.getElementById('vld-back') && document.getElementById('vld-back').addEv
 
 load();
 
-/* ── POLLING DE ANUNCIOS: revisar cada 30 segundos ── */
+/* ── POLLING DE ANUNCIOS: revisar cada 10 segundos ── */
 setInterval(()=>{
   try{ renderAnuncios(); }catch(_){}
-}, 30000);
+}, 10000);
 
 /* ── CONTADOR DE VISITAS ── */
 (async function incrementVisitCounter(){
