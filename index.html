@@ -1343,6 +1343,7 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
         <button class="tv-tab" data-tab="anuncios">Anuncios</button>
       </div>
     </div>
+    <div id="tv-stats" style="padding:16px clamp(18px,5vw,64px) 0;max-width:920px;margin:0 auto;width:100%;"></div>
     <div class="tv-body" id="tv-body"></div>
   </div>
 
@@ -3443,12 +3444,13 @@ async function renderTeacherDashboard(){
   $('tv-tabs').style.display='flex';
   $('tv-tabs').querySelectorAll('.tv-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tvTab));
   const body=$('tv-body');
+  const stats=$('tv-stats');
   body.innerHTML='<p style="color:rgba(245,239,224,.4);font-family:var(--fm);font-size:.65rem">Cargando…</p>';
   const students=await fetchRosterAndAvance();
-  /* contador de visitas */
+  /* contador de visitas — en contenedor separado, no se sobreescribe */
   let visitas=0;
   try{const r=await storageAdapter.get('visitas',true);if(r&&r.value)visitas=parseInt(r.value)||0;}catch(_){}
-  const statsBar='<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;background:var(--ink3);border-radius:10px;border:1px solid var(--border)">'
+  if(stats) stats.innerHTML='<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:0;padding:12px 16px;background:var(--ink3);border-radius:10px;border:1px solid var(--border)">'
     +'<div style="display:flex;flex-direction:column;gap:2px">'
     +'<span style="font-family:var(--fm);font-size:.52rem;letter-spacing:.08em;text-transform:uppercase;color:var(--steel)">Aperturas totales</span>'
     +'<span style="font-family:var(--fd);font-size:1.8rem;font-weight:700;color:var(--gold);line-height:1">'+visitas+'</span>'
@@ -3464,7 +3466,6 @@ async function renderTeacherDashboard(){
     +'<span style="font-family:var(--fd);font-size:1.8rem;font-weight:700;color:var(--steel);line-height:1">'+students.filter(s=>s.snap&&s.snap.doneCount>0).length+'</span>'
     +'</div>'
     +'</div>';
-  body.innerHTML=statsBar;
   if(tvTab==='lista')renderTvLista(students);
   else if(tvTab==='mapa')renderTvMapa(students);
   else renderTvAnuncios(students);
