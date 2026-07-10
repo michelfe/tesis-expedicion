@@ -3447,9 +3447,14 @@ async function renderTeacherDashboard(){
   const stats=$('tv-stats');
   body.innerHTML='<p style="color:rgba(245,239,224,.4);font-family:var(--fm);font-size:.65rem">Cargando…</p>';
   const students=await fetchRosterAndAvance();
-  /* contador de visitas — en contenedor separado, no se sobreescribe */
+  /* contador de visitas — consulta directa a Supabase */
   let visitas=0;
-  try{const r=await storageAdapter.get('visitas',true);if(r&&r.value)visitas=parseInt(r.value)||0;}catch(_){}
+  try{
+    if(_sb){
+      const {data:vd}=await _sb.from('config').select('value').eq('key','visitas').single();
+      if(vd&&vd.value) visitas=parseInt(vd.value)||0;
+    }
+  }catch(_){}
   if(stats) stats.innerHTML='<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:0;padding:12px 16px;background:var(--ink3);border-radius:10px;border:1px solid var(--border)">'
     +'<div style="display:flex;flex-direction:column;gap:2px">'
     +'<span style="font-family:var(--fm);font-size:.52rem;letter-spacing:.08em;text-transform:uppercase;color:var(--steel)">Aperturas totales</span>'
