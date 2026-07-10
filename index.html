@@ -613,8 +613,7 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
 .track-pick-btn span{font-family:var(--fm);font-size:.62rem;color:var(--tsoft);}
 .track-badge-pill{font-family:var(--fm);font-size:.55rem;background:var(--goldf);color:var(--gold2);border-radius:999px;padding:2px 8px;letter-spacing:.03em;}
 
-/* ── anuncios banner (vista estudiante) ── */
-#anuncios-banner{padding:0 clamp(20px,5vw,64px);flex-shrink:0;}
+/* ── anuncios banner (vista estudiante) — posición fija en hero-tools ── */
 .anuncio-card{background:var(--goldf);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 10px 26px -10px rgba(232,196,106,.3),inset 0 1px 0 rgba(255,255,255,.05);}
 .anuncio-body{flex:1;min-width:0;}
 .anuncio-meta{font-family:var(--fm);font-size:.52rem;letter-spacing:.06em;text-transform:uppercase;color:var(--gold2);margin-bottom:3px;}
@@ -2791,24 +2790,40 @@ $('onboard-return-confirm').addEventListener('click',async()=>{
   const code=$('onboard-return-code').value.trim().toUpperCase();
   if(!code)return;
   $('onboard-return-err').style.display='none';
-  /* Buscar en Supabase */
+  $('onboard-return-confirm').textContent='Buscando…';
+  $('onboard-return-confirm').disabled=true;
   try{
+    /* Buscar en avances primero */
+    let name=null, track='cuantitativa';
     const r=await storageAdapter.get('avance:'+code,true);
     if(r&&r.value){
       const snap=JSON.parse(r.value);
-      /* Restaurar identidad */
-      student={name:snap.name,code};
+      name=snap.name;
+      track=snap.track||'cuantitativa';
+    } else {
+      /* Buscar en roster como fallback */
+      const rr=await storageAdapter.get('roster',true);
+      if(rr&&rr.value){
+        const roster=JSON.parse(rr.value);
+        if(roster[code]) name=roster[code].name;
+      }
+    }
+    if(name){
+      student={name,code};
       await window.storage.set(STK,JSON.stringify(student),false);
-      /* Restaurar track */
-      if(snap.track) applyTrack(snap.track);
+      applyTrack(track);
       renderTL();syncTrackBadge();
       $('onboard-ov').classList.remove('open');
       pushProgressSnapshot();
+      renderAnuncios();
     } else {
       $('onboard-return-err').style.display='block';
     }
-  }catch(_){
+  }catch(e){
     $('onboard-return-err').style.display='block';
+  }finally{
+    $('onboard-return-confirm').textContent='Recuperar sesión';
+    $('onboard-return-confirm').disabled=false;
   }
 });
 $('onboard-return-code').addEventListener('keydown',e=>{if(e.key==='Enter')$('onboard-return-confirm').click();});
@@ -3469,14 +3484,15 @@ function renderTvLista(students){
       +'<td><span class="roster-pbar"><span class="roster-pbar-fill" style="width:'+pct+'%"></span></span>'+pct+'%</td>'
       +'<td class="roster-theory">'+theory+'</td>'
       +'<td>'+relTime(snap?snap.lastActivity:null)+'</td>'
+      +'<td><button class="btn-del-student" data-code="'+esc(s.code)+'" data-name="'+esc(s.name)+'" title="Eliminar estudiante" style="background:none;border:none;color:rgba(192,112,90,.5);cursor:pointer;font-size:.85rem;padding:4px 8px;transition:color .15s;" onmouseover="this.style.color=\'var(--rose)\'" onmouseout="this.style.color=\'rgba(192,112,90,.5)\'">✕</button></td>'
       +'</tr>';
   }).join('');
 
-  const emptyMsg=filtered.length?'':'<tr><td colspan="5" style="text-align:center;color:rgba(245,239,224,.3);font-family:var(--fm);font-size:.65rem;padding:20px">Sin estudiantes en este filtro.</td></tr>';
+  const emptyMsg=filtered.length?'':'<tr><td colspan="6" style="text-align:center;color:rgba(245,239,224,.3);font-family:var(--fm);font-size:.65rem;padding:20px">Sin estudiantes en este filtro.</td></tr>';
 
   body.innerHTML='<div class="tv-section">'+filterBar
     +'<table class="roster-table"><thead><tr>'
-    +'<th>Estudiante</th><th>Etapa actual</th><th>Avance</th><th>Teoría vista</th><th>Última actividad</th>'
+    +'<th>Estudiante</th><th>Etapa actual</th><th>Avance</th><th>Teoría vista</th><th>Última actividad</th><th></th>'
     +'</tr></thead><tbody>'+(rows||emptyMsg)+'</tbody></table>'
     +'<p style="font-family:var(--fm);font-size:.55rem;color:rgba(245,239,224,.25);margin-top:8px">Clic en una fila para ver el detalle completo de la tesis.</p>'
     +'</div>';
@@ -3486,9 +3502,37 @@ function renderTvLista(students){
     btn.addEventListener('click',()=>{tvFilter=btn.dataset.f;renderTvLista(students);});
   });
 
+  /* Borrar estudiante */
+  body.querySelectorAll('.btn-del-student').forEach(btn=>{
+    btn.addEventListener('click',async(e)=>{
+      e.stopPropagation();
+      const code=btn.dataset.code, name=btn.dataset.name;
+      if(!(await customConfirm('Eliminar estudiante','¿Eliminar a '+name+' ('+code+')? Se borrará su registro y avance. Esta acción no se puede deshacer.')))return;
+      try{
+        /* Borrar de Supabase */
+        if(_sb){
+          await _sb.from('avances').delete().eq('code',code);
+          await _sb.from('roster').delete().eq('code',code);
+        }
+        /* Borrar de window.storage */
+        try{await window.storage.delete('avance:'+code,true);}catch(_){}
+        /* Actualizar roster local */
+        let roster={};
+        try{const r=await storageAdapter.get('roster',true);if(r&&r.value)roster=JSON.parse(r.value);}catch(_){}
+        delete roster[code];
+        await storageAdapter.set('roster',JSON.stringify(roster),true);
+        /* Refrescar panel */
+        renderTeacherDashboard();
+      }catch(err){
+        alert('Error al eliminar: '+err.message);
+      }
+    });
+  });
+
   /* F2-A: click en fila → panel de detalle */
   body.querySelectorAll('tr[data-code]').forEach(tr=>{
-    tr.addEventListener('click',()=>{
+    tr.addEventListener('click',(e)=>{
+      if(e.target.closest('.btn-del-student'))return;
       const s=students.find(x=>x.code===tr.dataset.code);
       if(s) openStudentDetail(s);
     });
