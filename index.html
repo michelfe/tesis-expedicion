@@ -1747,6 +1747,9 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
       <div class="note-sec">
         <div class="sec-lbl" style="margin-top:14px">Mis apuntes</div>
         <textarea class="note-area" id="p-note" placeholder="Notas, dudas para tu asesor o recordatorios…" aria-label="Mis apuntes para esta etapa"></textarea>
+        <p style="font-family:var(--fm);font-size:.52rem;color:rgba(74,55,40,.45);line-height:1.5;margin-top:6px;border-left:2px solid rgba(74,55,40,.15);padding-left:6px;">
+          📓 <strong>Bitácora personal</strong> — Úsala para organizar ideas, pendientes y referencias de tu proceso. <strong>No guardes aquí fragmentos de tu tesis ni información confidencial.</strong> Esta es una guía metodológica de ayuda, no un repositorio seguro. Protege tus ideas originales guardándolas en un lugar privado.
+        </p>
       </div>
     </div>
     <div class="panel-ft">
@@ -2283,18 +2286,60 @@ function stateSymbol(s){return s==='pending'?'○':s==='progress'?'◑':'✓';}
 async function save(){
   try{
     $('save-tag').textContent='Guardando…';
+    /* 1. Guardar local (rápido, para esta sesión) */
     await window.storage.set(SK,JSON.stringify(state),false);
+    /* 2. Guardar estado completo en Supabase (privado, para recuperar desde cualquier máquina) */
+    if(_sb && student){
+      const snap_privado = {
+        state: state,
+        savedAt: new Date().toISOString(),
+        version: 'v4'
+      };
+      await _sb.from('avances').upsert({
+        code: student.code,
+        name: student.name,
+        track: state.track||'cuantitativa',
+        snap_privado,
+        updated_at: new Date().toISOString()
+      }, {onConflict:'code', ignoreDuplicates:false});
+    }
     $('save-tag').textContent='Guardado ✓';
     setTimeout(()=>{if($('save-tag').textContent==='Guardado ✓')$('save-tag').textContent='';},1800);
   }catch(e){$('save-tag').textContent='Error al guardar';}
   pushProgressSnapshot();
 }
 async function load(){
-  try{const r=await window.storage.get(SK,false);if(r&&r.value)state=JSON.parse(r.value);else state=defaults();}
-  catch(_){state=defaults();}
+  try{
+    /* Intentar cargar desde localStorage primero (más rápido) */
+    const r=await window.storage.get(SK,false);
+    if(r&&r.value) state=JSON.parse(r.value);
+    else state=defaults();
+  }catch(_){state=defaults();}
   normalise();renderTL({animate:true});
   syncTrackBadge();
   await initStudentIdentity();
+}
+
+/* Restaurar estado completo desde Supabase (cuando el estudiante entra con código) */
+async function restoreFromSupabase(code){
+  if(!_sb) return false;
+  try{
+    const {data,error}=await _sb.from('avances')
+      .select('snap_privado,track')
+      .eq('code',code).single();
+    if(error||!data||!data.snap_privado) return false;
+    const privado=data.snap_privado;
+    if(privado.state){
+      state=privado.state;
+      normalise();
+      /* Guardar en local para próxima vez */
+      await window.storage.set(SK,JSON.stringify(state),false);
+      renderTL({animate:true});
+      syncTrackBadge();
+      return true;
+    }
+    return false;
+  }catch(_){return false;}
 }
 function normalise(){
   state.track=state.track||'cuantitativa';
@@ -2846,7 +2891,9 @@ $('onboard-return-confirm').addEventListener('click',async()=>{
     if(name){
       student={name,code};
       await window.storage.set(STK,JSON.stringify(student),false);
-      applyTrack(track);
+      /* Intentar restaurar estado completo desde Supabase */
+      const restored = await restoreFromSupabase(code);
+      if(!restored) applyTrack(track);
       renderTL();syncTrackBadge();
       $('onboard-ov').classList.remove('open');
       pushProgressSnapshot();
