@@ -2490,7 +2490,7 @@ function renderTL(opts){
     if(idx < state.phases.length-1){
       const conn=document.createElement('div');
       conn.className='spine-conn';
-      const connNotes=(state.freeNotes||[]).filter(n=>n.after===idx);
+      const connNotes=(state.freeNotes||[]).filter(n=>n.after===idx && (n.title||n.text));
       const dotsHtml=connNotes.map(n=>
         '<div class="note-dot" data-nid="'+n.id+'" title="'+esc(n.title||n.text.slice(0,30)||'Nota')+'"></div>'
       ).join('');
@@ -4409,9 +4409,14 @@ $('note-btn-save').addEventListener('click',()=>{
   activeNote.text=$('note-free-area').value.trim();
   activeNote.updatedAt=new Date().toISOString();
   if(!state.freeNotes) state.freeNotes=[];
-  const existing=state.freeNotes.findIndex(n=>n.id===activeNote.id);
-  if(existing>=0) state.freeNotes[existing]=activeNote;
-  else state.freeNotes.push(activeNote);
+  /* Si título y texto están vacíos → eliminar la nota */
+  if(!activeNote.title && !activeNote.text){
+    state.freeNotes=state.freeNotes.filter(n=>n.id!==activeNote.id);
+  } else {
+    const existing=state.freeNotes.findIndex(n=>n.id===activeNote.id);
+    if(existing>=0) state.freeNotes[existing]=activeNote;
+    else state.freeNotes.push(activeNote);
+  }
   closeNotePanel();
   renderTL();
   save();
