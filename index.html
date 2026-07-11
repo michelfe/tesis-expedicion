@@ -72,17 +72,16 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
   position:absolute;right:clamp(10px,6vw,64px);top:clamp(24px,4vw,40px);
   display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2;
 }
-/* anuncios: esquina inferior derecha fija, sobre el hint-bar */
+/* anuncios: barra de notificación inferior izquierda — no tapa nada */
 #anuncios-banner{
   position:fixed;
-  bottom:48px;
-  right:20px;
-  width:220px;
+  bottom:10px;
+  left:10px;
+  width:280px;
   display:flex;flex-direction:column;gap:6px;
   z-index:250;
-  max-height:50vh;
+  max-height:200px;
   overflow-y:auto;
-  pointer-events:all;
 }
 #anuncios-banner::-webkit-scrollbar{width:2px;}
 #anuncios-banner::-webkit-scrollbar-thumb{background:rgba(232,196,106,.2);border-radius:2px;}
