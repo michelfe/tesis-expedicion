@@ -361,12 +361,16 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
 .note-dot:hover{transform:scale(1.4);box-shadow:0 0 0 2px var(--ink),0 0 10px rgba(192,112,90,.8);}
 .note-dot-add{
   width:16px;height:16px;border-radius:50%;
-  background:rgba(192,112,90,.15);border:1.5px solid rgba(192,112,90,.5);
-  color:var(--rose);font-size:.65rem;line-height:1;
+  background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);
+  color:rgba(255,255,255,.3);font-size:.65rem;line-height:1;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:all .18s;opacity:1;
 }
-.note-dot-add:hover{border-color:var(--rose);background:rgba(192,112,90,.25);transform:scale(1.2);}
+.note-dot-add:hover{border-color:var(--rose);color:var(--rose);background:rgba(192,112,90,.12);transform:scale(1.2);}
+.note-dot-add.has-notes{
+  background:rgba(192,112,90,.2);border-color:var(--rose);color:var(--rose);
+  box-shadow:0 0 0 2px var(--ink),0 0 8px rgba(192,112,90,.4);
+}
 
 /* ── PANEL DE NOTA LIBRE ── */
 .note-panel-ov{position:fixed;inset:0;z-index:500;pointer-events:none;}
@@ -2500,7 +2504,7 @@ function renderTL(opts){
       conn.innerHTML=
         '<div class="conn-top"></div>'+
         '<div class="conn-mid">'+
-          '<div class="note-dots">'+dotsHtml+'<button class="note-dot-add" data-after="'+idx+'" title="Añadir nota o apunte aquí" aria-label="Añadir nota entre etapas">✏️</button></div>'+
+          '<div class="note-dots">'+dotsHtml+'<button class="note-dot-add'+(connNotes.length?' has-notes':'')+'" data-after="'+idx+'" title="'+(connNotes.length?connNotes.length+' nota(s) — clic para ver o añadir':'Añadir nota o apunte aquí')+'" aria-label="Notas entre etapas">✏️</button></div>'+
         '</div>'+
         '<div class="conn-bot"></div>';
       track.appendChild(conn);
@@ -2551,7 +2555,19 @@ function attachTL(){
   $('tl-track').querySelectorAll('.note-dot-add').forEach(btn=>{
     btn.addEventListener('click',e=>{
       e.stopPropagation();
-      openNotePanel(null, +btn.dataset.after);
+      const afterIdx = +btn.dataset.after;
+      const connNotes=(state.freeNotes||[]).filter(n=>n.after===afterIdx);
+      if(connNotes.length===1){
+        /* una sola nota → abrirla directamente */
+        openNotePanel(connNotes[0], afterIdx);
+      } else if(connNotes.length>1){
+        /* varias notas → abrir la más reciente */
+        const latest=connNotes.sort((a,b)=>new Date(b.updatedAt||b.createdAt)-new Date(a.updatedAt||a.createdAt))[0];
+        openNotePanel(latest, afterIdx);
+      } else {
+        /* sin notas → crear nueva */
+        openNotePanel(null, afterIdx);
+      }
     });
   });
   $('tl-track').querySelectorAll('.note-dot').forEach(dot=>{
