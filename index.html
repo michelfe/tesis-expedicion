@@ -103,7 +103,7 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
 }
 .anuncio-card .anuncio-body{display:flex;flex-direction:column;gap:3px;}
 .anuncio-card .anuncio-meta{font-family:var(--fm);font-size:.48rem;color:var(--steel);letter-spacing:.04em;display:flex;align-items:center;gap:4px;}
-.anuncio-card .anuncio-text{font-family:var(--fb);font-size:.6rem;color:var(--paper);line-height:1.4;}
+.anuncio-card .anuncio-text{font-family:var(--fb);font-size:.6rem;color:var(--paper);line-height:1.4;white-space:pre-wrap;}
 .anuncio-dismiss{font-family:var(--fm);font-size:.5rem;background:none;border:1px solid rgba(232,196,106,.2);color:var(--gold2);border-radius:999px;padding:2px 7px;cursor:pointer;margin-top:4px;transition:all .15s;align-self:flex-start;}
 .anuncio-dismiss:hover{background:var(--goldf);}
 .hero-tools-btn{
@@ -3217,7 +3217,7 @@ async function renderAnuncios(){
   body.innerHTML=relevant.map(function(a){
     return '<div class="anuncio-card"><div class="anuncio-body">'
       +'<div class="anuncio-meta"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg> '+new Date(a.date).toLocaleDateString()+'</div>'
-      +'<div class="anuncio-text">'+esc(a.text)+'</div>'
+      +'<div class="anuncio-text" style="white-space:pre-wrap;">'+esc(a.text)+'</div>'
       +renderLinkHtml(a.link,'anuncio-img','anuncio-link')
       +'</div><button class="anuncio-dismiss" data-aid="'+a.id+'">Entendido</button></div>';
   }).join('');
@@ -4021,7 +4021,7 @@ async function renderTvAnuncios(students){
     const linkHtml=renderLinkHtml(a.link,'announce-img','anuncio-link');
     return '<div class="announce-item"><div class="announce-item-body">'
       +'<div class="announce-item-meta">'+esc(targetLbl)+' · '+new Date(a.date).toLocaleDateString()+'</div>'
-      +'<div class="announce-item-text">'+esc(a.text)+'</div>'+linkHtml
+      +'<div class="announce-item-text" style="white-space:pre-wrap;">'+esc(a.text)+'</div>'+linkHtml
       +'</div><button class="announce-del" data-aid="'+a.id+'">✕</button></div>';
   }).join('')||'<p class="roster-empty">Sin anuncios todavía.</p>';
   /* F2-C: select con opciones por track */
