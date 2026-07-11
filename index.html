@@ -72,14 +72,16 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
   position:absolute;right:clamp(10px,6vw,64px);top:clamp(24px,4vw,40px);
   display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2;
 }
-/* anuncios: centrado entre título y herramientas */
+/* anuncios: esquina inferior derecha, no interfiere con nada */
 #anuncios-banner{
-  position:absolute;
-  right:clamp(140px,22vw,260px);
-  top:clamp(24px,4vw,40px);
-  width:clamp(180px,20vw,260px);
+  position:fixed;
+  bottom:60px;
+  right:16px;
+  width:240px;
   display:flex;flex-direction:column;gap:6px;
-  z-index:3;
+  z-index:200;
+  max-height:60vh;
+  overflow-y:auto;
 }
 #anuncios-banner::-webkit-scrollbar{width:2px;}
 #anuncios-banner::-webkit-scrollbar-thumb{background:rgba(232,196,106,.2);border-radius:2px;}
@@ -3145,18 +3147,23 @@ async function pushProgressSnapshot(){
 }
 
 /* ─── ANUNCIOS: banner en vista del estudiante ─── */
+/* Set en memoria de anuncios ya leídos — evita duplicación en polling */
+const _readsCache = new Set();
+
 async function renderAnuncios(){
   const box=$('anuncios-banner');if(!box)return;
   let list=[];
   try{const r=await storageAdapter.get('anuncios',true);if(r&&r.value)list=JSON.parse(r.value);}catch(_){box.innerHTML='';return;}
   let reads=[];
   try{const r2=await window.storage.get(STK+':reads',false);if(r2&&r2.value)reads=JSON.parse(r2.value);}catch(_){}
+  /* Combinar reads guardados + cache en memoria */
+  reads.forEach(id=>_readsCache.add(id));
   const myCode=student?student.code:null;
   const myTrack=state?state.track||'cuantitativa':'cuantitativa';
   const relevant=list.filter(function(a){
-    return (a.target==='all'||a.target===myCode||a.target===myTrack)&&!reads.includes(a.id);
+    return (a.target==='all'||a.target===myCode||a.target===myTrack)&&!_readsCache.has(a.id);
   })
-    .sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+    .sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
   if(!relevant.length){box.innerHTML='';return;}
   box.innerHTML=relevant.map(function(a){
     return '<div class="anuncio-card"><div class="anuncio-body">'
@@ -3167,7 +3174,9 @@ async function renderAnuncios(){
   }).join('');
   box.querySelectorAll('.anuncio-dismiss').forEach(btn=>{
     btn.addEventListener('click',async()=>{
-      reads.push(btn.dataset.aid);
+      const aid=btn.dataset.aid;
+      _readsCache.add(aid); /* marcar en cache inmediatamente */
+      reads.push(aid);
       try{await window.storage.set(STK+':reads',JSON.stringify(reads),false);}catch(_){}
       renderAnuncios();
     });
