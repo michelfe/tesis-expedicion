@@ -360,14 +360,13 @@ html,body{height:100%;overflow:hidden;background:#12101A;}
 }
 .note-dot:hover{transform:scale(1.4);box-shadow:0 0 0 2px var(--ink),0 0 10px rgba(192,112,90,.8);}
 .note-dot-add{
-  width:14px;height:14px;border-radius:50%;
-  background:transparent;border:1.5px dashed rgba(192,112,90,.4);
-  color:var(--rose);font-size:.6rem;line-height:1;
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(192,112,90,.15);border:1.5px solid rgba(192,112,90,.5);
+  color:var(--rose);font-size:.65rem;line-height:1;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:all .18s;opacity:0;
+  transition:all .18s;opacity:1;
 }
-.conn-mid:hover .note-dot-add{opacity:1;}
-.note-dot-add:hover{border-color:var(--rose);background:rgba(192,112,90,.1);transform:scale(1.2);}
+.note-dot-add:hover{border-color:var(--rose);background:rgba(192,112,90,.25);transform:scale(1.2);}
 
 /* ── PANEL DE NOTA LIBRE ── */
 .note-panel-ov{position:fixed;inset:0;z-index:500;pointer-events:none;}
@@ -2501,7 +2500,7 @@ function renderTL(opts){
       conn.innerHTML=
         '<div class="conn-top"></div>'+
         '<div class="conn-mid">'+
-          '<div class="note-dots">'+dotsHtml+'<button class="note-dot-add" data-after="'+idx+'" title="Añadir nota aquí">+</button></div>'+
+          '<div class="note-dots">'+dotsHtml+'<button class="note-dot-add" data-after="'+idx+'" title="Añadir nota o apunte aquí" aria-label="Añadir nota entre etapas">✏️</button></div>'+
         '</div>'+
         '<div class="conn-bot"></div>';
       track.appendChild(conn);
